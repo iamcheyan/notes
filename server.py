@@ -1,17 +1,36 @@
 #!/usr/bin/env python3
-"""Local dev server for 片语 — serves static files + handles /api/save"""
+"""Local dev server for 片语 — serves static files + handles /api/save + auto-push"""
 import http.server
 import json
 import os
 import re
 import subprocess
 import sys
+import threading
 from datetime import datetime
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
 ROOT = os.path.dirname(os.path.abspath(__file__))
 NOTES_DIR = os.path.join(ROOT, 'notes')
 BUILD_SCRIPT = os.path.join(ROOT, 'build.py')
+GIT_REMOTE = 'origin'
+
+
+def git_auto_push():
+    """Auto-commit and push changes to remote in background."""
+    try:
+        subprocess.run(['git', 'add', '-A'], cwd=ROOT,
+                       capture_output=True, timeout=30)
+        result = subprocess.run(['git', 'diff', '--cached', '--quiet'],
+                                cwd=ROOT, capture_output=True, timeout=30)
+        if result.returncode == 0:
+            return  # nothing to commit
+        subprocess.run(['git', 'commit', '-m', 'auto: update notes'],
+                       cwd=ROOT, capture_output=True, timeout=30)
+        subprocess.run(['git', 'push', GIT_REMOTE, 'main'],
+                       cwd=ROOT, capture_output=True, timeout=60)
+    except Exception:
+        pass  # silent fail for auto-push
 
 
 class NotesHandler(http.server.SimpleHTTPRequestHandler):
@@ -36,6 +55,7 @@ class NotesHandler(http.server.SimpleHTTPRequestHandler):
                 os.remove(fpath)
             subprocess.run([sys.executable, BUILD_SCRIPT],
                            cwd=ROOT, capture_output=True)
+            threading.Thread(target=git_auto_push, daemon=True).start()
             self.send_json({'ok': True})
         except Exception as e:
             self.send_json({'ok': False, 'error': str(e)}, status=400)
@@ -64,6 +84,7 @@ class NotesHandler(http.server.SimpleHTTPRequestHandler):
             # Regenerate notes.json
             subprocess.run([sys.executable, BUILD_SCRIPT],
                            cwd=ROOT, capture_output=True)
+            threading.Thread(target=git_auto_push, daemon=True).start()
 
             self.send_json({'ok': True, 'id': filename[:-3], 'filename': filename})
 

@@ -231,12 +231,26 @@
   let noteText = '';
   let noteTitle = '';
   let noteId = '';
+  let isStaticMode = false;
 
   function showToast(msg) {
     if (toastTimer) clearTimeout(toastTimer);
     toastEl.textContent = msg;
     toastEl.classList.add('show');
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
+  }
+
+  async function detectMode() {
+    try {
+      const resp = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}'
+      });
+      isStaticMode = !(resp.headers.get('Content-Type') || '').includes('json');
+    } catch {
+      isStaticMode = true;
+    }
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -246,7 +260,7 @@
     contentArea.innerHTML = '<div class="error-msg">❌ ノートIDが指定されていません</div>';
     document.title = '片語 · 不明なノート';
   } else {
-    loadNote(noteId);
+    detectMode().then(() => loadNote(noteId));
   }
 
   async function loadNote(id) {
@@ -296,6 +310,9 @@
       </div>`;
 
     actions.style.display = 'flex';
+    if (isStaticMode) {
+      editBtn.style.display = 'none';
+    }
     editBtn.onclick = () => {
       window.location.href = `index.html?text=${encodeURIComponent(text)}`;
     };
@@ -337,10 +354,29 @@
         logging: false,
       });
 
-      const qrSectionHeight = 180;
       const scale = 3;
       const finalCanvas = document.createElement('canvas');
       finalCanvas.width = cardCanvas.width;
+
+      const siteUrl = getSiteUrl();
+      const noteUrl = `${siteUrl}/note.html?id=${encodeURIComponent(noteId)}`;
+
+      let qr = null;
+      let qrModuleCount = 0;
+      try {
+        qr = qrcode(0, 'M');
+        qr.addData(noteUrl);
+        qr.make();
+        qrModuleCount = qr.getModuleCount();
+      } catch (e) {
+        console.warn('QR generation failed:', e);
+      }
+
+      const cellSize = 3 * scale;
+      const qrSize = qrModuleCount * cellSize;
+      const sectionPadding = 36 * scale;
+      const qrSectionHeight = Math.ceil((sectionPadding * 2 + qrSize + 60 * scale) / scale);
+
       finalCanvas.height = cardCanvas.height + qrSectionHeight * scale;
       const ctx = finalCanvas.getContext('2d');
 
@@ -350,41 +386,30 @@
       ctx.fillStyle = '#f7f3eb';
       ctx.fillRect(0, qrY, finalCanvas.width, qrSectionHeight * scale);
 
-      const siteUrl = getSiteUrl();
-      const noteUrl = `${siteUrl}/note.html?id=${encodeURIComponent(noteId)}`;
-
       ctx.fillStyle = '#999';
       ctx.font = `${13 * scale}px -apple-system, "Segoe UI", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText('QRコードをスキャンして原文を表示', finalCanvas.width / 2, qrY + 36 * scale);
+      ctx.fillText('扫描二维码查看原文', finalCanvas.width / 2, qrY + 36 * scale);
       ctx.font = `${11 * scale}px -apple-system, "Segoe UI", sans-serif`;
       ctx.fillStyle = '#bbb';
       ctx.fillText(noteUrl, finalCanvas.width / 2, qrY + 60 * scale);
 
-      try {
-        const qr = qrcode(0, 'M');
-        qr.addData(noteUrl);
-        qr.make();
-        const moduleCount = qr.getModuleCount();
-        const cellSize = 4 * scale;
-        const qrSize = moduleCount * cellSize;
+      if (qr) {
+        const qrYpos = qrY + 78 * scale;
         const qrX = (finalCanvas.width - qrSize) / 2;
-        const qrYpos = qrY + 72 * scale;
 
         ctx.fillStyle = '#fff';
-        ctx.fillRect(qrX - 4 * scale, qrYpos - 4 * scale, qrSize + 8 * scale, qrSize + 8 * scale);
+        ctx.fillRect(qrX - 6 * scale, qrYpos - 6 * scale, qrSize + 12 * scale, qrSize + 12 * scale);
         ctx.fillRect(qrX, qrYpos, qrSize, qrSize);
 
         ctx.fillStyle = '#2c2c2c';
-        for (let row = 0; row < moduleCount; row++) {
-          for (let col = 0; col < moduleCount; col++) {
+        for (let row = 0; row < qrModuleCount; row++) {
+          for (let col = 0; col < qrModuleCount; col++) {
             if (qr.isDark(row, col)) {
               ctx.fillRect(qrX + col * cellSize, qrYpos + row * cellSize, cellSize, cellSize);
             }
           }
         }
-      } catch (e) {
-        console.warn('QR generation failed:', e);
       }
 
       const link = document.createElement('a');

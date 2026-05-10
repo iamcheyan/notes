@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>片语便签</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c0a87a'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'/%3E%3C/svg%3E">
+    <link rel="alternate icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAAMSURBVDiNY2AYBfQMgf///3P8+evTNNYBeCPQcIGGBCMCMCSWCAAQBCG28YVogAZorKg6FcSNAryBhRDQp6qVWWdcmFuc2Zvcm0UDABAxQHJA1fRrJAWVW4sgAAAABJRU5ErkJggg==">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
@@ -241,32 +243,127 @@
             white-space: pre-wrap;
         }
 
-        /* 分享图片预览 */
-        .share-preview {
+        /* 分享模式 - 右侧变成图片查看器 */
+        .right-panel.share-mode .detail-header {
+            display: none;
+        }
+
+        .right-panel.share-mode .bottom-bar {
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .right-panel.share-mode .bottom-bar .share-action-btn {
+            padding: 6px 14px;
+            border: 1px solid #ccc;
+            background: linear-gradient(to bottom, #f8f6f2, #f0ebe3);
+            color: #333;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+
+        .right-panel.share-mode .bottom-bar .share-action-btn:hover {
+            background: linear-gradient(to bottom, #fcfaf8, #f5f3ee);
+            border-color: #bbb;
+        }
+
+        .right-panel.share-mode .bottom-bar .share-action-btn:active {
+            background: linear-gradient(to bottom, #f0ebe3, #e8e6e0);
+        }
+
+        /* 图片查看器 */
+        .share-viewer {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px;
+            background: #eae5db;
+            background-image:
+                radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 70%, rgba(0,0,0,0.04) 0%, transparent 60%);
+        }
+
+        .share-viewer img {
+            display: block;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .share-zoom-level {
+            font-size: 12px;
+            color: #666;
+            min-width: 36px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 右键菜单 */
+        .context-menu {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
             z-index: 1000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            min-width: 140px;
+            padding: 4px 0;
         }
 
-        .share-preview.show {
-            display: flex;
+        .context-menu.show {
+            display: block;
         }
 
+        .context-menu-item {
+            padding: 8px 16px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .context-menu-item:hover {
+            background: #f0ebe3;
+        }
+
+        /* 便签卡片样式 - 用于图片渲染 */
         .share-card {
-            background: #f9f7f2;
+            background: #f7f3eb;
+            border-radius: 2px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
             padding: 48px 52px 40px;
             max-width: 600px;
             width: 90%;
+            margin: 0 auto;
+            font-family: "Noto Serif SC", "Source Han Serif SC", STSong, "Songti SC", Georgia, serif;
+            line-height: 2;
+            color: #2c2c2c;
+            position: relative;
+        }
+
+        .share-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(0,0,0,.015) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(0,0,0,.01) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(255,255,255,.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
             border-radius: 2px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+        }
+
+        .share-card-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            min-height: 380px;
         }
 
         .share-card-header {
@@ -274,71 +371,43 @@
             justify-content: space-between;
             align-items: baseline;
             padding-bottom: 14px;
-            border-bottom: 1px solid rgba(0,0,0,0.12);
+            border-bottom: 1px solid rgba(0,0,0,.12);
             margin-bottom: 24px;
             font-size: 13px;
             color: #999;
-            letter-spacing: 0.5px;
+            letter-spacing: .5px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
-        .share-card-content {
-            min-height: 200px;
+        .share-card-date {
+            color: #999;
+        }
+
+        .share-card-brand {
+            color: #bbb;
+            font-size: 13px;
+        }
+
+        .share-card-content-inner {
+            flex: 1;
             font-size: 17px;
-            line-height: 2;
-            color: #333;
-            white-space: pre-wrap;
             word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
             font-family: "Noto Serif SC", "Source Han Serif SC", STSong, "Songti SC", Georgia, serif;
+            line-height: 2;
+            color: #2c2c2c;
         }
 
         .share-card-footer {
             margin-top: 28px;
             padding-top: 16px;
-            border-top: 1px solid rgba(0,0,0,0.08);
+            border-top: 1px solid rgba(0,0,0,.08);
             text-align: center;
             font-size: 12px;
             color: #bbb;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             letter-spacing: 1px;
-        }
-
-        .share-preview-actions {
-            margin-top: 20px;
-            display: flex;
-            gap: 12px;
-        }
-
-        .share-preview-actions .btn-action {
-            padding: 12px 32px;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background .2s, transform .1s;
-        }
-
-        .btn-primary {
-            background: #c0a87a;
-            color: #fff;
-        }
-
-        .btn-primary:hover {
-            background: #b09560;
-        }
-
-        .btn-secondary {
-            background: #f0ebe3;
-            color: #666;
-        }
-
-        .btn-secondary:hover {
-            background: #e5ddd0;
-        }
-
-        .btn-action:active {
-            transform: scale(0.97);
         }
 
         .bottom-bar {
@@ -433,7 +502,7 @@
         <div class="top-bar-right">
             <button class="btn" id="shareBtn" title="分享为图片">
                 <svg viewBox="0 0 24 24">
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                 </svg>
             </button>
             <button class="btn delete" id="deleteBtn" title="删除便签">
@@ -450,7 +519,7 @@
         <div class="left-panel" id="leftPanel"></div>
 
         <!-- 右侧详情 -->
-        <div class="right-panel">
+        <div class="right-panel" id="rightPanel">
             <div class="detail-header">
                 <div class="detail-tags">
                     <span class="tag">无</span>
@@ -470,20 +539,23 @@
         </div>
     </div>
 
-    <!-- 分享预览 -->
-    <div class="share-preview" id="sharePreview">
+    <!-- 隐藏的渲染卡片（用于 html2canvas 截图） -->
+    <div style="position:fixed;left:-9999px;top:0;z-index:-1;opacity:0;pointer-events:none">
         <div class="share-card" id="shareCard">
-            <div class="share-card-header">
-                <span class="share-card-date" id="shareDate"></span>
-                <span class="share-card-brand">片语</span>
+            <div class="share-card-content">
+                <div class="share-card-header">
+                    <span class="share-card-date" id="shareDate"></span>
+                    <span class="share-card-brand">片语</span>
+                </div>
+                <div class="share-card-content-inner" id="shareContent"></div>
+                <div class="share-card-footer">— 片语便签 —</div>
             </div>
-            <div class="share-card-content" id="shareContent"></div>
-            <div class="share-card-footer">— 片语便签 —</div>
         </div>
-        <div class="share-preview-actions">
-            <button class="btn-action btn-primary" id="downloadBtn">⬇ 下载图片</button>
-            <button class="btn-action btn-secondary" id="closePreviewBtn">关闭</button>
-        </div>
+    </div>
+
+    <!-- 右键菜单 -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" id="viewOriginalBtn">查看原图</div>
     </div>
 
     <!-- 加载动画 -->
@@ -497,7 +569,10 @@
         let currentNote = null;
         let isEditing = false;
         let isNewNote = false;
+        let isStaticMode = false;
         let toasterTimer = null;
+        let currentCanvas = null; // 存储当前生成的图片 canvas
+        let currentZoom = 1;     // 当前缩放比例
 
         // 显示通知
         function showToast(msg) {
@@ -617,6 +692,12 @@
 
         // 选择便签
         function selectNote(note) {
+            if (isStaticMode) {
+                window.location.href = `note.html?id=${encodeURIComponent(note.id)}`;
+                return;
+            }
+            // 如果在分享模式，先退出
+            exitShareMode();
             const noteItems = document.querySelectorAll('.note-item');
             noteItems.forEach(item => {
                 item.classList.remove('active');
@@ -644,8 +725,29 @@
             isEditing = false;
         }
 
+        // 检测是否在静态模式（GitHub Pages，无后端服务器）
+        async function detectMode() {
+            try {
+                const resp = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: '{}'
+                });
+                const ct = resp.headers.get('Content-Type') || '';
+                isStaticMode = !ct.includes('json');
+            } catch {
+                isStaticMode = true;
+            }
+        }
+
         // 初始化加载便签
         async function initNotes() {
+            await detectMode();
+            if (isStaticMode) {
+                document.getElementById('newBtn').style.display = 'none';
+                document.getElementById('deleteBtn').style.display = 'none';
+                document.getElementById('shareBtn').style.display = 'none';
+            }
             try {
                 const resp = await fetch('notes.json?' + Date.now());
                 if (resp.ok) {
@@ -668,6 +770,7 @@
 
         // 创建新便签
         function createNewNote() {
+            exitShareMode();
             const newNote = {
                 id: '',
                 title: '新便签',
@@ -816,38 +919,127 @@
         }
 
         // 分享便签为图片
-        function shareNote() {
+        async function shareNote() {
             if (!currentNote && !isNewNote) {
                 showToast('请先选择一个便签');
                 return;
             }
 
+            // 如果已经在编辑中，先保存
+            if (isEditing) {
+                await saveAndFinish();
+            }
+
             const detailContent = document.getElementById('detailContent');
-            const textarea = detailContent.querySelector('textarea');
-            const text = textarea ? textarea.value : (currentNote ? currentNote.text : '');
+            const text = currentNote ? currentNote.text : '';
 
             if (!text.trim()) {
                 showToast('请先输入便签内容');
                 return;
             }
 
+            // 设置渲染卡片内容
             const dateStr = currentNote ? formatDateDetail(currentNote.date) : formatDateDetail(getDateStr());
             document.getElementById('shareDate').textContent = dateStr;
             document.getElementById('shareContent').textContent = text;
-            document.getElementById('sharePreview').classList.add('show');
-        }
 
-        // 关闭分享预览
-        function closeSharePreview() {
-            document.getElementById('sharePreview').classList.remove('show');
-        }
-
-        // 下载图片（带二维码）
-        async function downloadImage() {
-            const shareCard = document.getElementById('shareCard');
+            // 生成图片
             const loadingOverlay = document.getElementById('loadingOverlay');
-
             loadingOverlay.classList.add('active');
+
+            const canvas = await generateImage();
+            loadingOverlay.classList.remove('active');
+            if (!canvas) return;
+
+            currentCanvas = canvas;
+            currentZoom = 1;
+
+            // 切换右侧面板为分享模式
+            const rightPanel = document.getElementById('rightPanel');
+            rightPanel.classList.add('share-mode');
+
+            // 替换 detail-content 为图片查看器
+            detailContent.innerHTML = '';
+            detailContent.className = 'share-viewer';
+            detailContent.classList.remove('editing', 'empty');
+
+            const img = document.createElement('img');
+            img.src = canvas.toDataURL('image/png');
+            img.draggable = false;
+            detailContent.appendChild(img);
+
+            // 更新底部栏 - 缩放控制 + 操作按钮
+            const bottomBar = document.querySelector('.bottom-bar');
+            bottomBar.innerHTML = `
+                <button class="share-action-btn" id="backFromShareBtn">取消</button>
+                <div style="margin:0 auto;display:flex;align-items:center;gap:4px;">
+                    <button class="share-action-btn" id="zoomOutBtn" style="padding:6px 10px;">−</button>
+                    <span class="share-zoom-level" id="zoomLevel">100%</span>
+                    <button class="share-action-btn" id="zoomInBtn" style="padding:6px 10px;">+</button>
+                    <button class="share-action-btn" id="zoomResetBtn">1:1</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;">
+                    <button class="share-action-btn" id="openInNewBtn">打开原图</button>
+                    <button class="share-action-btn" id="downloadShareBtn">下载图片</button>
+                </div>
+            `;
+
+            document.getElementById('backFromShareBtn').addEventListener('click', exitShareMode);
+            document.getElementById('downloadShareBtn').addEventListener('click', downloadImage);
+            document.getElementById('openInNewBtn').addEventListener('click', openInNewPage);
+            document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
+            document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
+            document.getElementById('zoomResetBtn').addEventListener('click', zoomReset);
+
+            // 绑定图片右键菜单
+            img.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                showContextMenu(e.clientX, e.clientY);
+            });
+        }
+
+        // 退出分享模式，恢复右侧面板
+        function exitShareMode() {
+            const rightPanel = document.getElementById('rightPanel');
+            if (!rightPanel.classList.contains('share-mode')) return;
+
+            rightPanel.classList.remove('share-mode');
+
+            const detailContent = document.getElementById('detailContent');
+            detailContent.className = 'detail-content';
+            detailContent.innerHTML = '';
+            detailContent.classList.remove('sharing');
+
+            // 恢复底部栏
+            const bottomBar = document.querySelector('.bottom-bar');
+            bottomBar.innerHTML = `
+                <span style="color: #777; font-size:13px; margin-right: auto;">全部便签</span>
+                <svg style="width: 16px; height: 16px; fill: #888; margin-right: 8px;" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <svg style="width: 16px; height: 16px; fill: #999;" viewBox="0 0 24 24">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+            `;
+
+            // 如果当前有选中的便签，恢复显示
+            if (currentNote && currentNote.text) {
+                displayNoteDetail(currentNote);
+            } else if (notes.length > 0) {
+                selectNote(notes[0]);
+            } else {
+                detailContent.textContent = '暂无便签';
+                detailContent.classList.add('empty');
+            }
+
+            hideContextMenu();
+            currentCanvas = null;
+            currentZoom = 1;
+        }
+
+        // 生成图片（带二维码）
+        async function generateImage() {
+            const shareCard = document.getElementById('shareCard');
 
             try {
                 if (document.fonts && document.fonts.ready) {
@@ -863,10 +1055,31 @@
                     logging: false
                 });
 
-                const qrSectionHeight = 180;
                 const scale = 3;
                 const finalCanvas = document.createElement('canvas');
                 finalCanvas.width = cardCanvas.width;
+
+                const siteUrl = getSiteUrl();
+                const noteUrl = currentNote
+                    ? `${siteUrl}/note.html?id=${encodeURIComponent(currentNote.id)}`
+                    : siteUrl;
+
+                let qr = null;
+                let qrModuleCount = 0;
+                try {
+                    qr = qrcode(0, 'M');
+                    qr.addData(noteUrl);
+                    qr.make();
+                    qrModuleCount = qr.getModuleCount();
+                } catch (e) {
+                    console.warn('QR generation failed:', e);
+                }
+
+                const cellSize = 3 * scale;
+                const qrSize = qrModuleCount * cellSize;
+                const sectionPadding = 36 * scale;
+                const qrSectionHeight = Math.ceil((sectionPadding * 2 + qrSize + 60 * scale) / scale);
+
                 finalCanvas.height = cardCanvas.height + qrSectionHeight * scale;
                 const ctx = finalCanvas.getContext('2d');
 
@@ -876,11 +1089,6 @@
                 ctx.fillStyle = '#f9f7f2';
                 ctx.fillRect(0, qrY, finalCanvas.width, qrSectionHeight * scale);
 
-                const siteUrl = getSiteUrl();
-                const noteUrl = currentNote
-                    ? `${siteUrl}/note.html?id=${encodeURIComponent(currentNote.id)}`
-                    : siteUrl;
-
                 ctx.fillStyle = '#999';
                 ctx.font = `${13 * scale}px -apple-system, "Segoe UI", sans-serif`;
                 ctx.textAlign = 'center';
@@ -889,57 +1097,123 @@
                 ctx.fillStyle = '#bbb';
                 ctx.fillText(noteUrl, finalCanvas.width / 2, qrY + 60 * scale);
 
-                try {
-                    const qr = qrcode(0, 'M');
-                    qr.addData(noteUrl);
-                    qr.make();
-                    const moduleCount = qr.getModuleCount();
-                    const cellSize = 4 * scale;
-                    const qrSize = moduleCount * cellSize;
+                if (qr) {
+                    const qrYpos = qrY + 78 * scale;
                     const qrX = (finalCanvas.width - qrSize) / 2;
-                    const qrYpos = qrY + 72 * scale;
 
                     ctx.fillStyle = '#fff';
-                    ctx.fillRect(qrX - 4 * scale, qrYpos - 4 * scale, qrSize + 8 * scale, qrSize + 8 * scale);
+                    ctx.fillRect(qrX - 6 * scale, qrYpos - 6 * scale, qrSize + 12 * scale, qrSize + 12 * scale);
                     ctx.fillRect(qrX, qrYpos, qrSize, qrSize);
 
                     ctx.fillStyle = '#2c2c2c';
-                    for (let row = 0; row < moduleCount; row++) {
-                        for (let col = 0; col < moduleCount; col++) {
+                    for (let row = 0; row < qrModuleCount; row++) {
+                        for (let col = 0; col < qrModuleCount; col++) {
                             if (qr.isDark(row, col)) {
                                 ctx.fillRect(qrX + col * cellSize, qrYpos + row * cellSize, cellSize, cellSize);
                             }
                         }
                     }
-                } catch (e) {
-                    console.warn('QR generation failed:', e);
                 }
 
-                const link = document.createElement('a');
-                const now = new Date();
-                const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-                link.download = `片语便签_${dateStr}.png`;
-                link.href = finalCanvas.toDataURL('image/png');
-                link.click();
-                showToast('图片已下载');
+                return finalCanvas;
             } catch (err) {
                 console.error(err);
                 showToast('图片生成失败');
-            } finally {
-                loadingOverlay.classList.remove('active');
+                return null;
             }
         }
+
+        // 下载图片
+        async function downloadImage() {
+            const canvas = currentCanvas;
+            if (!canvas) return;
+
+            const link = document.createElement('a');
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+            link.download = `片语便签_${dateStr}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('图片已下载');
+        }
+
+        // 缩放控制
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom * 1.25, 5);
+            updateZoom();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom / 1.25, 0.25);
+            updateZoom();
+        }
+
+        function zoomReset() {
+            currentZoom = 1;
+            updateZoom();
+        }
+
+        function updateZoom() {
+            const img = document.querySelector('.share-viewer img');
+            if (img) {
+                img.style.transform = `scale(${currentZoom})`;
+                img.style.transformOrigin = 'top center';
+            }
+            document.getElementById('zoomLevel').textContent = Math.round(currentZoom * 100) + '%';
+        }
+
+        // 在新页面中打开原图
+        function openInNewPage() {
+            if (!currentCanvas) return;
+            currentCanvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+            });
+        }
+
+        // 右键菜单
+        function showContextMenu(x, y) {
+            const menu = document.getElementById('contextMenu');
+            // 确保菜单不超出视口
+            const menuWidth = 140;
+            const menuHeight = 36;
+            const adjustedX = Math.min(x, window.innerWidth - menuWidth - 10);
+            const adjustedY = Math.min(y, window.innerHeight - menuHeight - 10);
+            menu.style.left = adjustedX + 'px';
+            menu.style.top = adjustedY + 'px';
+            menu.classList.add('show');
+        }
+
+        function hideContextMenu() {
+            document.getElementById('contextMenu').classList.remove('show');
+        }
+
+        // 查看原图（在新标签页打开）
+        function viewOriginal() {
+            hideContextMenu();
+            if (!currentCanvas) return;
+            currentCanvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+            });
+        }
+
+        // 点击其他地方关闭右键菜单
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.context-menu')) {
+                hideContextMenu();
+            }
+        });
 
         // 事件监听
         document.getElementById('refreshBtn').addEventListener('click', initNotes);
         document.getElementById('newBtn').addEventListener('click', createNewNote);
         document.getElementById('shareBtn').addEventListener('click', shareNote);
         document.getElementById('deleteBtn').addEventListener('click', deleteNote);
-        document.getElementById('downloadBtn').addEventListener('click', downloadImage);
-        document.getElementById('closePreviewBtn').addEventListener('click', closeSharePreview);
         document.getElementById('detailContent').addEventListener('dblclick', () => {
             if (!isEditing) startEditing();
         });
+        document.getElementById('viewOriginalBtn').addEventListener('click', viewOriginal);
 
         // 初始化
         initNotes();
