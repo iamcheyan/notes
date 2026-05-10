@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>片語 · ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js">
+</script>
+<style>
+  *, *::before, *::after {
+    margin: 0; padding: 0; box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #e8e0d0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  .back-link {
+    align-self: flex-start;
+    margin-bottom: 24px;
+    color: #999;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.6);
+    transition: background .2s;
+  }
+  .back-link:hover { background: #fff; color: #555; }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 12px 32px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+
+  .btn-primary {
+    background: #c0a87a;
+    color: #fff;
+  }
+  .btn-primary:hover { background: #b09560; }
+
+  .btn-secondary {
+    background: #f0ebe3;
+    color: #666;
+  }
+  .btn-secondary:hover { background: #e5ddd0; }
+
+  .note-card {
+    width: 600px;
+    padding: 48px 52px 40px;
+    font-family: "Noto Serif SC", "Source Han Serif SC", STSong, "Songti SC", "Times New Roman", serif;
+    line-height: 2;
+    color: #2c2c2c;
+    box-shadow: 0 4px 24px rgba(0,0,0,.15);
+    position: relative;
+    border-radius: 2px;
+    background-color: #f7f3eb;
+  }
+
+  .note-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(0,0,0,.015) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,0,0,.01) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(255,255,255,.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 2px;
+  }
+
+  .note-card-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    min-height: 380px;
+  }
+
+  .note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(0,0,0,.12);
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: #999;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: .5px;
+  }
+  .note-brand { color: #bbb; }
+
+  .note-body {
+    flex: 1;
+    font-size: 17px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+  }
+
+  .note-footer {
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0,0,0,.08);
+    text-align: center;
+    font-size: 12px;
+    color: #bbb;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: 1px;
+  }
+
+  .error-msg {
+    background: #fff;
+    border-radius: 12px;
+    padding: 60px 40px;
+    text-align: center;
+    color: #999;
+    font-size: 16px;
+  }
+
+  .loading {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.35);
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }
+  .loading.active { display: flex; }
+
+  .spinner {
+    background: #fff;
+    padding: 28px 40px;
+    border-radius: 12px;
+    font-size: 16px;
+    color: #555;
+    text-align: center;
+  }
+  .spinner::after {
+    content: "";
+    display: block;
+    width: 32px; height: 32px;
+    margin: 16px auto 0;
+    border: 3px solid #e8e0d0;
+    border-top-color: #c0a87a;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+    z-index: 101;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 660px) {
+    body { padding: 16px; }
+    .note-card {
+      width: 100%;
+      padding: 32px 24px 28px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← エディタに戻る</a>
+
+<div id="contentArea"></div>
+
+<div class="actions" id="actions" style="display:none;">
+  <button class="btn btn-primary" id="downloadImgBtn">⬇ 画像をダウンロード</button>
+  <button class="btn btn-secondary" id="editBtn">✏ エディタで開く</button>
+</div>
+
+<div class="loading" id="loadingOverlay">
+  <div class="spinner">画像を生成中…</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  const contentArea = document.getElementById('contentArea');
+  const actions = document.getElementById('actions');
+  const downloadBtn = document.getElementById('downloadImgBtn');
+  const editBtn = document.getElementById('editBtn');
+  const loadingEl = document.getElementById('loadingOverlay');
+  const toastEl = document.getElementById('toast');
+
+  let toastTimer = null;
+  let noteText = '';
+  let noteTitle = '';
+  let noteId = '';
+
+  function showToast(msg) {
+    if (toastTimer) clearTimeout(toastTimer);
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  noteId = params.get('id');
+
+  if (!noteId) {
+    contentArea.innerHTML = '<div class="error-msg">❌ ノートIDが指定されていません</div>';
+    document.title = '片語 · 不明なノート';
+  } else {
+    loadNote(noteId);
+  }
+
+  async function loadNote(id) {
+    try {
+      const resp = await fetch('notes.json?' + Date.now());
+      if (resp.ok) {
+        const notes = await resp.json();
+        const note = notes.find(n => n.id === id);
+        if (note) {
+          noteText = note.text || '';
+          noteTitle = note.title || note.id;
+          renderNote(note.date, noteText, note.id);
+          return;
+        }
+      }
+    } catch {}
+
+    try {
+      const resp = await fetch(`notes/${encodeURIComponent(id)}.md`);
+      if (resp.ok) {
+        noteText = await resp.text();
+        noteTitle = id;
+        renderNote('', noteText, id);
+        return;
+      }
+    } catch {}
+
+    contentArea.innerHTML = '<div class="error-msg">❌ ノートが見つかりません</div>';
+  }
+
+  function renderNote(date, text, id) {
+    document.title = `片語 · ${noteTitle}`;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = date || `${now.getFullYear()}年${pad(now.getMonth()+1)}月${pad(now.getDate())}日  ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    contentArea.innerHTML = `
+      <div class="note-card" id="noteCard" style="background-color: #f7f3eb;">
+        <div class="note-card-content">
+          <div class="note-header">
+            <span class="note-date">${dateStr}</span>
+            <span class="note-brand">片語</span>
+          </div>
+          <div class="note-body" id="noteBody">${escapeHtml(text)}</div>
+          <div class="note-footer">— 片語で作成 —</div>
+        </div>
+      </div>`;
+
+    actions.style.display = 'flex';
+    editBtn.onclick = () => {
+      window.location.href = `index.html?text=${encodeURIComponent(text)}`;
+    };
+    downloadBtn.onclick = downloadImage;
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function getSiteUrl() {
+    const loc = window.location;
+    let base = loc.origin + loc.pathname;
+    if (base.endsWith('/')) base = base.slice(0, -1);
+    if (base.endsWith('note.html')) base = base.slice(0, -9);
+    if (base.endsWith('index.html')) base = base.slice(0, -11);
+    return base;
+  }
+
+  async function downloadImage() {
+    const card = document.getElementById('noteCard');
+    if (!card) return;
+
+    loadingEl.classList.add('active');
+
+    try {
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+      await new Promise(r => setTimeout(r, 150));
+
+      const cardCanvas = await html2canvas(card, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#f7f3eb',
+        logging: false,
+      });
+
+      const qrSectionHeight = 180;
+      const scale = 3;
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = cardCanvas.width;
+      finalCanvas.height = cardCanvas.height + qrSectionHeight * scale;
+      const ctx = finalCanvas.getContext('2d');
+
+      ctx.drawImage(cardCanvas, 0, 0);
+
+      const qrY = cardCanvas.height;
+      ctx.fillStyle = '#f7f3eb';
+      ctx.fillRect(0, qrY, finalCanvas.width, qrSectionHeight * scale);
+
+      const siteUrl = getSiteUrl();
+      const noteUrl = `${siteUrl}/note.html?id=${encodeURIComponent(noteId)}`;
+
+      ctx.fillStyle = '#999';
+      ctx.font = `${13 * scale}px -apple-system, "Segoe UI", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('QRコードをスキャンして原文を表示', finalCanvas.width / 2, qrY + 36 * scale);
+      ctx.font = `${11 * scale}px -apple-system, "Segoe UI", sans-serif`;
+      ctx.fillStyle = '#bbb';
+      ctx.fillText(noteUrl, finalCanvas.width / 2, qrY + 60 * scale);
+
+      try {
+        const qr = qrcode(0, 'M');
+        qr.addData(noteUrl);
+        qr.make();
+        const moduleCount = qr.getModuleCount();
+        const cellSize = 4 * scale;
+        const qrSize = moduleCount * cellSize;
+        const qrX = (finalCanvas.width - qrSize) / 2;
+        const qrYpos = qrY + 72 * scale;
+
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(qrX - 4 * scale, qrYpos - 4 * scale, qrSize + 8 * scale, qrSize + 8 * scale);
+        ctx.fillRect(qrX, qrYpos, qrSize, qrSize);
+
+        ctx.fillStyle = '#2c2c2c';
+        for (let row = 0; row < moduleCount; row++) {
+          for (let col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+              ctx.fillRect(qrX + col * cellSize, qrYpos + row * cellSize, cellSize, cellSize);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('QR generation failed:', e);
+      }
+
+      const link = document.createElement('a');
+      link.download = `片語_${noteId}.png`;
+      link.href = finalCanvas.toDataURL('image/png');
+      link.click();
+      showToast('✅ 画像をダウンロードしました');
+    } catch (err) {
+      console.error(err);
+      showToast('❌ 画像の生成に失敗しました');
+    } finally {
+      loadingEl.classList.remove('active');
+    }
+  }
+})();
+</script>
+</body>
+</html>
