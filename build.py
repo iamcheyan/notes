@@ -32,9 +32,12 @@ for fname in sorted(os.listdir(NOTES_DIR), reverse=True):
     date, title = parse_filename(fname)
     with open(fpath, 'r', encoding='utf-8') as f:
         text = f.read()
+    # Use first line as title, fallback to filename-derived title
+    first_line = text.split('\n')[0].strip()[:50] if text.strip() else title
+    display_title = first_line or title
     notes.append({
         'filename': fname,
-        'title': title,
+        'title': display_title,
         'date': date,
         'id': fname[:-3],
         'text': text,

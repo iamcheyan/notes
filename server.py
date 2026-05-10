@@ -68,13 +68,19 @@ class NotesHandler(http.server.SimpleHTTPRequestHandler):
             if not text:
                 raise ValueError('text is empty')
 
-            # Derive filename from first line
-            first_line = text.split('\n')[0].strip()
-            safe = re.sub(r'[\\/:*?"<>|]', '', first_line)[:30] or '未命名'
+            # Derive filename from timestamp (short, URL-friendly)
             now = datetime.now()
             date_str = now.strftime('%Y-%m-%d')
-            filename = f'{date_str}-{safe}.md'
+            time_str = now.strftime('%H%M%S')
+            filename = f'{date_str}-{time_str}.md'
             filepath = os.path.join(NOTES_DIR, filename)
+
+            # Handle collision (unlikely but safe)
+            counter = 1
+            while os.path.exists(filepath):
+                filename = f'{date_str}-{time_str}-{counter}.md'
+                filepath = os.path.join(NOTES_DIR, filename)
+                counter += 1
 
             # Write the markdown file
             os.makedirs(NOTES_DIR, exist_ok=True)
