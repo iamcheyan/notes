@@ -68,17 +68,16 @@ class NotesHandler(http.server.SimpleHTTPRequestHandler):
             if not text:
                 raise ValueError('text is empty')
 
-            # Derive filename from timestamp (short, URL-friendly)
+            # Derive filename from compact timestamp (short, URL-friendly)
             now = datetime.now()
-            date_str = now.strftime('%Y-%m-%d')
-            time_str = now.strftime('%H%M%S')
-            filename = f'{date_str}-{time_str}.md'
+            ts = now.strftime('%Y%m%d%H%M%S')
+            filename = f'{ts}.md'
             filepath = os.path.join(NOTES_DIR, filename)
 
             # Handle collision (unlikely but safe)
             counter = 1
             while os.path.exists(filepath):
-                filename = f'{date_str}-{time_str}-{counter}.md'
+                filename = f'{ts}-{counter}.md'
                 filepath = os.path.join(NOTES_DIR, filename)
                 counter += 1
 

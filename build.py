@@ -10,7 +10,7 @@ def parse_filename(name):
     stem = name[:-3]  # remove .md
     date = None
     # Try YYYY-MM-DD-标题 or YYYY_MM_DD-标题
-    m = re.match(r'^(\d{4})[-_](\d{2})[-_](\d{2})[-_\s]*(.*)', stem)
+    m = re.match(r'^(\d{4})[-_]?(\d{2})[-_]?(\d{2})[-_\s]*(.*)', stem)
     if m:
         date = f'{m.group(1)}-{m.group(2)}-{m.group(3)}'
         title = m.group(4).strip()
